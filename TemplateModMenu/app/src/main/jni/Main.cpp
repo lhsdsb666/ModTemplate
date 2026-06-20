@@ -13,7 +13,7 @@
 #include "Menu/Setup.h"          // for CheckOverlayPermission, Init
 #include "Includes/Macros.h"
 // --- 汉化注入专用：引入 Dobby 核心库 ---
-#include "Dobby/.h" 
+#include "Dobby.h" 
 
 // 声明原函数的替身指针
 void (*o_ebow)(void *instance, int32_t a);
