@@ -1,3 +1,6 @@
+#include <stdio.h>   // 用于支持 fopen, fgets, fclose
+#include <stdlib.h>  // 用于支持 strtoull
+#include <string.h>  // 用于支持 strstr
 #include <jni.h>                 // for JNI_ERR, JNIEnv, jclass, JNINativeM...
 #include <pthread.h>             // for pthread_create
 #include <unistd.h>              // for sleep
@@ -9,7 +12,17 @@
 #include "Menu/Menu.h"           // for Icon, IconWebViewData, SettingsList
 #include "Menu/Setup.h"          // for CheckOverlayPermission, Init
 #include "Includes/Macros.h"
+// --- 汉化注入专用：引入 Dobby 核心库 ---
+#include "Dobby/dobby.h" 
 
+// 声明原函数的替身指针
+void (*o_ebow)(void *instance, int32_t a);
+
+// 编写我们的汉化拦截函数
+void my_ebow(void *instance, int32_t a) {
+    // 拦截该方法，不管原本传入的是什么语言，强行写死成数字 3（简体中文）
+    o_ebow(instance, 3); 
+}
 // Target lib here
 #define targetLibName OBFUSCATE("libil2cpp.so")
 
@@ -79,7 +92,32 @@ void *hack_thread(void *)
 
     Il2cpp::Init();
     Il2cpp::EnsureAttached();
+    // --- 汉化注入专用：动态抓取基址并实施 Hook ---
+    uintptr_t il2cpp_base = 0;
+    char line[512];
+    
+    // 采用最底层的读取系统内存映射方式，百分百稳妥抓取 libil2cpp.so 的首地址
+    FILE* f = fopen("/proc/self/maps", "r");
+    if (f) {
+        while (fgets(line, sizeof(line), f)) {
+            if (strstr(line, "libil2cpp.so")) {
+                il2cpp_base = strtoull(line, NULL, 16);
+                break; // 抓到第一个首地址立刻退出循环
+            }
+        }
+        fclose(f);
+    }
 
+    if (il2cpp_base > 0) {
+        // 你的终极真地址偏移量：0xad0240c
+        uintptr_t target_addr = il2cpp_base + 0xad0240c;
+        
+        // 调用 Dobby 在内存中实施致盲拦截
+        DobbyHook((void *)target_addr, (void *)my_ebow, (void **)&o_ebow);
+        LOGD("【汉化提示】已经成功在内存中截获 ebow 函数！目标地址: %p", (void *)target_addr);
+    } else {
+        LOGD("【汉化提示】严重错误：未能在内存中捕获到 libil2cpp.so 基址！");
+    }
     LOGD(OBFUSCATE("HOOKING..."));
     // g_Image = Il2cpp::GetAssembly("Assembly-CSharp")->getImage();
 
