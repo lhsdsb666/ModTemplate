@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 include_directories(.)
 #include <stdio.h>   // 用于支持 fopen, fgets, fclose
 #include <stdlib.h>  // 用于支持 strtoull
