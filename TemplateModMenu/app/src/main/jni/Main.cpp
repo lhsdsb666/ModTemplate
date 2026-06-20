@@ -1,3 +1,4 @@
+include_directories(.)
 #include <stdio.h>   // 用于支持 fopen, fgets, fclose
 #include <stdlib.h>  // 用于支持 strtoull
 #include <string.h>  // 用于支持 strstr
